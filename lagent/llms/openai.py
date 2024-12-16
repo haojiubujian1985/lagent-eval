@@ -15,7 +15,9 @@ from .base_api import BaseAPIModel
 
 warnings.simplefilter('default')
 
-OPENAI_API_BASE = 'https://api.openai.com/v1/chat/completions'
+# OPENAI_API_BASE = 'https://api.openai.com/v1/chat/completions'
+OPENAI_API_BASE = os.getenv('OPENAI_API_BASE', OPENAI_API_BASE)
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', 'EMPTY')
 
 
 class GPTAPI(BaseAPIModel):
@@ -57,7 +59,8 @@ class GPTAPI(BaseAPIModel):
                      dict(role='system', api_role='system'),
                      dict(role='user', api_role='user'),
                      dict(role='assistant', api_role='assistant'),
-                     dict(role='environment', api_role='system')
+                     dict(role='environment', api_role='system'),
+                     dict(role='function', api_role='assistant')
                  ],
                  openai_api_base: str = OPENAI_API_BASE,
                  proxies: Optional[Dict] = None,
@@ -432,13 +435,23 @@ class GPTAPI(BaseAPIModel):
                     'frequency_penalty')
             gen_params['result_format'] = 'message'
             data = {
+                'model': model_type,                
+                'messages': messages,
+                **gen_params
+            }
+        elif 'llama' in model_type.lower() or 'baichuan' in model_type.lower() or 'ep' in model_type.lower() or 'glm' in model_type.lower() or 'moonshot' in model_type.lower() or 'marco' in model_type.lower() or 'qwq-32' in model_type.lower():
+            header['X-DashScope-SSE'] = 'enable'
+            gen_params.pop('skip_special_tokens', None)
+            gen_params.pop('session_id', None)
+            gen_params['max_tokens'] = 5120
+            
+            gen_params.pop('do_sample', None)
+            gen_params.pop('repetition_penalty', None)
+            
+            data = {
                 'model': model_type,
-                'input': {
-                    'messages': messages
-                },
-                'parameters': {
-                    **gen_params
-                }
+                'messages': messages,
+                **gen_params
             }
         else:
             raise NotImplementedError(
