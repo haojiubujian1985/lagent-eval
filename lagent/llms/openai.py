@@ -15,7 +15,9 @@ from .base_api import BaseAPIModel
 
 warnings.simplefilter('default')
 
-OPENAI_API_BASE = 'https://api.openai.com/v1/chat/completions'
+# OPENAI_API_BASE = 'https://api.openai.com/v1/chat/completions'
+OPENAI_API_BASE = os.getenv('OPENAI_API_BASE', OPENAI_API_BASE)
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', 'EMPTY')
 
 
 class GPTAPI(BaseAPIModel):
@@ -432,13 +434,9 @@ class GPTAPI(BaseAPIModel):
                     'frequency_penalty')
             gen_params['result_format'] = 'message'
             data = {
-                'model': model_type,
-                'input': {
-                    'messages': messages
-                },
-                'parameters': {
-                    **gen_params
-                }
+                'model': model_type,                
+                'messages': messages,
+                **gen_params
             }
         else:
             raise NotImplementedError(
